@@ -26,8 +26,8 @@ from helpers.param_config import (
     input_output_formats,
 )
 from helpers.stimuli_generator import generate_stimuli
-from helpers.test_config import generate_make_command
-from helpers.utils import compare_pcc, run_shell_command
+from helpers.utils import compare_pcc
+from helpers.profiler import build_perf_test, ProfilerData
 
 
 def generate_golden(operation, operand1, data_format):
@@ -111,11 +111,16 @@ def test_eltwise_unary_sfpu(testname, formats, dest_acc, approx_mode, mathop):
         "approx_mode": approx_mode,
     }
 
-    make_cmd = generate_make_command(test_config)
-    run_shell_command(f"cd .. && {make_cmd}")
+    profiler_meta = build_perf_test(test_config)
+    if profiler_meta is not None:
+        print(f"Profiler metadata: {profiler_meta}")
     run_elf_files(testname)
 
     wait_for_tensix_operations_finished()
+
+    profiler_runtime_data = ProfilerData().get_data(profiler_meta)
+    print(f"Profiler runtime data: {profiler_runtime_data}")
+
     res_from_L1 = collect_results(
         formats, tensor_size=len(src_A)
     )  # Bug patchup in (unpack.py): passing formats struct to check unpack_src with pack_dst and distinguish when input and output formats have different exponent widths then reading from L1 changes

@@ -9,6 +9,7 @@
 
 #include "ckernel.h"
 #include "llk_defs.h"
+#include "profiler.h"
 
 // Globals
 uint32_t unp_cfg_context        = 0;
@@ -67,27 +68,30 @@ void call_sfpu_operation(SfpuType operation)
 
 void run_kernel()
 {
+    {
+        ZONE_SCOPED("EXAMPLE_ZONE")
 // copy srca to dest
 #ifdef ARCH_BLACKHOLE
-    _llk_math_eltwise_unary_datacopy_init_<DataCopyType::A2D, BroadcastType::NONE, false, is_fp32_dest_acc_en, false>(0, 0, 4, MATH_FORMAT);
+        _llk_math_eltwise_unary_datacopy_init_<DataCopyType::A2D, BroadcastType::NONE, false, is_fp32_dest_acc_en, false>(0, 0, 4, MATH_FORMAT);
 #else
-    _llk_math_eltwise_unary_datacopy_init_<DataCopyType::A2D, BroadcastType::NONE, is_fp32_dest_acc_en, false>(0, 0, 4, MATH_FORMAT);
+        _llk_math_eltwise_unary_datacopy_init_<DataCopyType::A2D, BroadcastType::NONE, is_fp32_dest_acc_en, false>(0, 0, 4, MATH_FORMAT);
 #endif
-    _llk_math_pack_sync_init_<DstSync::SyncFull, is_fp32_dest_acc_en>();
-    _llk_math_hw_configure_<false, false>(MATH_FORMAT, MATH_FORMAT);
-    _llk_math_wait_for_dest_available_<DstSync::SyncFull>();
-    _llk_math_eltwise_unary_datacopy_<DataCopyType::A2D, DstSync::SyncFull, BroadcastType::NONE, is_fp32_dest_acc_en, unpack_to_dest>(
-        0, MATH_FORMAT, MATH_FORMAT);
+        _llk_math_pack_sync_init_<DstSync::SyncFull, is_fp32_dest_acc_en>();
+        _llk_math_hw_configure_<false, false>(MATH_FORMAT, MATH_FORMAT);
+        _llk_math_wait_for_dest_available_<DstSync::SyncFull>();
+        _llk_math_eltwise_unary_datacopy_<DataCopyType::A2D, DstSync::SyncFull, BroadcastType::NONE, is_fp32_dest_acc_en, unpack_to_dest>(
+            0, MATH_FORMAT, MATH_FORMAT);
 
-    // calculation of sfpu operation on dest
-    _llk_math_eltwise_unary_sfpu_init_<SFPU_OPERATION>();
-    _llk_math_eltwise_unary_sfpu_start_<DstSync::SyncFull>(0);
-    // calling sfpu function from ckernel
-    // this part is where parametrization of operation takes part
-    call_sfpu_operation(SFPU_OPERATION);
+        // calculation of sfpu operation on dest
+        _llk_math_eltwise_unary_sfpu_init_<SFPU_OPERATION>();
+        _llk_math_eltwise_unary_sfpu_start_<DstSync::SyncFull>(0);
+        // calling sfpu function from ckernel
+        // this part is where parametrization of operation takes part
+        call_sfpu_operation(SFPU_OPERATION);
 
-    _llk_math_eltwise_unary_sfpu_done_();
-    _llk_math_dest_section_done_<DstSync::SyncFull, is_fp32_dest_acc_en>();
+        _llk_math_eltwise_unary_sfpu_done_();
+        _llk_math_dest_section_done_<DstSync::SyncFull, is_fp32_dest_acc_en>();
+    }
 }
 
 #endif
