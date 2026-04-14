@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "sanitizer/backend.h"
-
 // Goes in LLK_LIB in Init and Uninit
 // Set or clear extended state mask bits
 // If set, check that set mask covers all ones currently set in state

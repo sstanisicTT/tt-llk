@@ -165,39 +165,33 @@ public:
         LLK_ASSERT(is_known(), "panic: llk_san: underlying value is not known");
         return underlying;
     }
+
+    template <typename U>
+    bool assert_cond(const state_t<U>& rhs) const noexcept
+    {
+        if (is_ignore() || rhs.is_ignore())
+            return true;
+        if (is_unknown() || rhs.is_unknown())
+            return false;
+        return get_underlying() == rhs.get_underlying();
+    }
+
+    template <typename U>
+    bool panic_cond(const state_t<U>& rhs) const noexcept
+    {
+        if (is_ignore() || rhs.is_ignore())
+            return true;
+        if (is_unknown() || rhs.is_unknown())
+            return false;
+        return get_underlying() != rhs.get_underlying();
+    }
+
+    template <typename U>
+    void update(const state_t<U>& rhs) noexcept(std::is_nothrow_copy_assignable_v<T>)
+    {
+        *this = rhs;
+    }
 };
-
-template <typename T, typename U>
-static inline bool _assert_condition(const state_t<T>& lhs, const state_t<U>& rhs)
-{
-    if (lhs.is_ignore() || rhs.is_ignore())
-    {
-        return true;
-    }
-
-    if (lhs.is_unknown() || rhs.is_unknown())
-    {
-        return false;
-    }
-
-    return lhs.get_underlying() == rhs.get_underlying();
-}
-
-template <typename T, typename U>
-static inline bool _panic_condition(const state_t<T>& lhs, const state_t<U>& rhs)
-{
-    if (lhs.is_ignore() || rhs.is_ignore())
-    {
-        return true;
-    }
-
-    if (lhs.is_unknown() || rhs.is_unknown())
-    {
-        return false;
-    }
-
-    return lhs.get_underlying() != rhs.get_underlying();
-}
 
 // TODO: refactor below
 
